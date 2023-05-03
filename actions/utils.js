@@ -16,7 +16,9 @@
 ************************************************************************* */
 
 const AioLogger = require('@adobe/aio-lib-core-logging');
+const stateLib = require('@adobe/aio-lib-state');
 const fetch = require('node-fetch');
+const crypto = require('crypto');
 
 const MAX_RETRIES = 5;
 
@@ -121,6 +123,38 @@ function getDocPathFromUrl(url) {
     return `${path}.docx`;
 }
 
+async function updateStatus(projectExcelPath, status) {
+  const logger = getAioLogger();
+  // md5 hash of the config file
+  try {
+    const hash = crypto.createHash('md5').update(projectExcelPath).digest('hex');
+    logger.info(`Adding status to aio state lib with hash -- ${hash} - ${status}`);
+    const state = await stateLib.init();
+    state.put(hash, status);
+  } catch (err) {
+    logger.error(`Error creating state store ${err}`);
+  }
+}
+
+async function getStatusFromProjectFile(projectExcelPath) {
+  const logger = getAioLogger();
+  try {
+    // md5 hash of the config file
+    const hash = crypto.createHash('md5').update(projectExcelPath).digest('hex');
+    logger.info(`Project excel path and hash value -- ${projectExcelPath} and ${hash}`);
+    // init when running in an Adobe I/O Runtime action (OpenWhisk) (uses env vars __OW_API_KEY and __OW_NAMESPACE automatically)
+    const state = await stateLib.init();
+    // getting activation id data from io state
+    const res = await state.get(hash); // res = { value, expiration }
+    const status = res.value;
+    logger.info(`Status from the store ${status}`);
+    // getting status of the activation id.
+    return status;
+  } catch (err) {
+    logger.error(`Error creating state store ${err}`);
+  }
+}
+
 module.exports = {
     getAioLogger,
     getUrlInfo,
@@ -128,5 +162,7 @@ module.exports = {
     simulatePreview,
     handleExtension,
     getFile,
-    getDocPathFromUrl
+    getDocPathFromUrl,
+    updateStatus,
+    getStatusFromProjectFile
 };

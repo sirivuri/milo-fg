@@ -21,24 +21,29 @@ const {
     getAuthorizedRequestOption, createFolder, saveFile, updateExcelTable
 } = require('../sharepoint');
 const {
-    getAioLogger, simulatePreview, handleExtension, getFile
+    getAioLogger, simulatePreview, handleExtension, getFile, updateStatus
 } = require('../utils');
 
 async function main(params) {
     const logger = getAioLogger();
     let payload;
     try {
-        const { spToken, adminPageUri, projectExcelPath } = params;
-        if (!spToken || !adminPageUri || !projectExcelPath) {
+        const { spToken, adminPageUri, projectExcelPath, projectRoot } = params;
+        const projectPath = `${projectRoot}${projectExcelPath}`;
+        if (!spToken || !adminPageUri || !projectExcelPath || !projectRoot) {
             payload = 'Required data is not available to proceed with FG Promote action.';
+            updateStatus(projectPath, payload);
             logger.error(payload);
         } else {
+            updateStatus(projectPath, 'In-Progress');
             logger.info('Getting all files to be promoted');
             payload = await promoteFloodgatedFiles(spToken, adminPageUri, projectExcelPath);
+            updateStatus(projectPath, 'Success');
         }
     } catch (err) {
         logger.error(err);
         payload = err;
+        updateStatus(projectPath, 'Failure');
     }
 
     return {
@@ -150,6 +155,7 @@ async function promoteFloodgatedFiles(spToken, adminPageUri, projectExcelPath) {
             status.srcPath = filePath;
         } catch (error) {
             logger.error(`Error occurred when trying to promote files to main content tree ${error.message}`);
+            throw new Error('Error occurred when trying to promote files to main content tree', error);
         }
         return status;
     }

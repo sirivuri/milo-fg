@@ -30,7 +30,7 @@ async function getProjectDetails(adminPageUri, projectExcelPath) {
     const projectFileJson = await readProjectFile(projectUrl);
     if (!projectFileJson) {
         logger.error('Could not read the project excel JSON');
-        return {};
+        throw new Error(`Could not read the project excel JSON`);
     }
 
     const urlsData = projectFileJson.urls.data;
@@ -90,7 +90,7 @@ async function updateProjectWithDocs(spToken, adminPageUri, projectDetail) {
     const logger = getAioLogger();
     if (!projectDetail || !projectDetail.filePaths) {
         logger.error('Error occurred when injecting sharepoint data');
-        return;
+        throw new Error(`Error occurred when injecting sharepoint data`);
     }
     const { filePaths } = projectDetail;
     const docPaths = [...filePaths.keys()];

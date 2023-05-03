@@ -19,17 +19,20 @@ const { getProjectDetails, updateProjectWithDocs } = require('../project');
 const {
     updateExcelTable, getFile, saveFile, copyFile
 } = require('../sharepoint');
-const { getAioLogger, simulatePreview, handleExtension } = require('../utils');
+const { getAioLogger, simulatePreview, handleExtension, updateStatus } = require('../utils');
 
 async function main(params) {
     const logger = getAioLogger();
     let payload;
+    const { spToken, adminPageUri, projectExcelPath, projectRoot } = params;
+    const projectPath = `${projectRoot}${projectExcelPath}`;
     try {
-        const { spToken, adminPageUri, projectExcelPath } = params;
-        if (!spToken || !adminPageUri || !projectExcelPath) {
+        if (!spToken || !adminPageUri || !projectExcelPath || !projectRoot) {
             payload = 'Required data is not available to proceed with FG Copy action.';
+            updateStatus(projectPath, payload);
             logger.error(payload);
         } else {
+            updateStatus(projectPath, 'In-Progress');
             logger.info('Getting all files to be floodgated from the project excel file');
             const projectDetail = await getProjectDetails(adminPageUri, projectExcelPath);
 
@@ -38,10 +41,12 @@ async function main(params) {
 
             logger.info('Start floodgating content');
             payload = await floodgateContent(spToken, adminPageUri, projectExcelPath, projectDetail);
+            updateStatus(projectPath, 'Success');
         }
     } catch (err) {
         logger.error(err);
         payload = err;
+        updateStatus(projectPath, 'Failure');
     }
 
     return {
@@ -84,6 +89,7 @@ async function floodgateContent(spToken, adminPageUri, projectExcelPath, project
             status.url = urlInfo.doc.url;
         } catch (error) {
             logger.error(`Error occurred when trying to copy files to floodgated content folder ${error.message}`);
+            throw new Error(`Error occurred when trying to copy files to floodgated content folder : ${error}`);
         }
         return status;
     }
@@ -101,7 +107,6 @@ async function floodgateContent(spToken, adminPageUri, projectExcelPath, project
             .map((status) => simulatePreview(handleExtension(status.srcPath), 1, true, adminPageUri)),
     );
     logger.info('Completed generating Preview for floodgated files.');
-
     const failedCopies = copyStatuses.filter((status) => !status.success)
         .map((status) => status.srcPath || 'Path Info Not available');
     const failedPreviews = previewStatuses.filter((status) => !status.success)
@@ -113,6 +118,7 @@ async function floodgateContent(spToken, adminPageUri, projectExcelPath, project
 
     if (failedCopies.length > 0 || failedPreviews.length > 0) {
         logger.info('Error occurred when floodgating content. Check project excel sheet for additional information.');
+        throw new Error('Error occurred when floodgating content. Check project excel sheet for additional information.');
     } else {
         logger.info('Copied content to floodgate tree successfully.');
     }

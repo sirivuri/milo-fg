@@ -17,34 +17,50 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 const openwhisk = require('openwhisk');
-const { getAioLogger } = require('../utils');
+const { getAioLogger, updateStatus } = require('../utils');
 
 // This returns the activation ID of the action that it called
 function main(args) {
     const logger = getAioLogger();
     let payload;
+    const { spToken, adminPageUri, projectExcelPath, projectRoot } = args;
+    const projectPath = `${projectRoot}${projectExcelPath}`;
     try {
-        const { spToken, adminPageUri, projectExcelPath } = args;
-        if (!spToken || !adminPageUri || !projectExcelPath) {
-            payload = 'Required data is not available to proceed with FG Promote action.';
+        if (!spToken || !adminPageUri || !projectExcelPath || !projectRoot) {
+            payload = 'Required data is not available to proceed with FG Copy action.';
+            updateStatus(projectPath, 'Failure');
             logger.error(payload);
         } else {
+            updateStatus(projectPath, 'In-Progress');
             const ow = openwhisk();
             return ow.actions.invoke({
                 name: 'milo-fg/copy-worker',
                 blocking: false, // this is the flag that instructs to execute the worker asynchronous
                 result: false,
                 params: args
+            }).then(result => {
+                logger.info(result);
+                //attaching activation id to the status
+                updateStatus(projectPath, `Copy action triggered with activation id ${result.activationId}`);
+                return {
+                    code: 200,
+                    body: { 'Success': result },
+                };
+            }).catch(err => {
+                updateStatus(projectPath, 'Failure');
+                console.error('failed to invoke actions' + err)
+                return {
+                    code: 500,
+                    body: { 'Error': err }
+                };
             });
         }
     } catch (err) {
+        updateStatus(projectPath, 'Failure');
         logger.error(err);
         payload = err;
     }
-
-    return {
-        body: payload,
-    };
+    return {payload};
 }
 
 exports.main = main;

@@ -18,6 +18,7 @@
 const { Headers } = require('node-fetch');
 const fetch = require('node-fetch');
 const { getConfig } = require('./config');
+const { updateStatus } = require('./utils');
 
 const BATCH_REQUEST_LIMIT = 20;
 
