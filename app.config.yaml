@@ -23,7 +23,7 @@ application:
             inputs:
               LOG_LEVEL: debug
             limits:
-              timeout: 300000
+              timeout: 3600000
           promote:
             function: actions/promote/promote.js
             web: 'yes'
@@ -37,7 +37,7 @@ application:
             inputs:
               LOG_LEVEL: debug
             limits:
-              timeout: 300000
+              timeout: 3600000
           status:
             function: actions/status/status.js
             web: 'yes'
