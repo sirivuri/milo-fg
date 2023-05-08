@@ -21,7 +21,7 @@ const {
     getAuthorizedRequestOption, createFolder, saveFile, updateExcelTable
 } = require('../sharepoint');
 const {
-    getAioLogger, simulatePreview, handleExtension, getFile, updateStatus
+    getAioLogger, simulatePreview, handleExtension, getFile, updateStatusToStateLib, PROMOTE_ACTION
 } = require('../utils');
 
 const BATCH_REQUEST_PROMOTE = 20;
@@ -40,16 +40,17 @@ async function main(params) {
             logger.error(payload);
         } else if (!spToken || !adminPageUri || !projectExcelPath) {
             payload = 'Required data is not available to proceed with FG Promote action.';
-            updateStatus(projectRoot, payload);
+            updateStatusToStateLib(projectRoot, 'Failure', payload, '', PROMOTE_ACTION);
             logger.error(payload);
         } else {
-            updateStatus(projectRoot, 'In-Progress');
-            logger.info('Getting all files to be promoted');
+            payload = 'Getting all files to be promoted';
+            updateStatusToStateLib(projectRoot, 'In-Progress', payload, '', PROMOTE_ACTION);
+            logger.info(payload);
             payload = await promoteFloodgatedFiles(spToken, adminPageUri, projectExcelPath);
-            updateStatus(projectRoot, 'Success');
+            updateStatusToStateLib(projectRoot, 'Success', '', '', PROMOTE_ACTION);
         }
     } catch (err) {
-        updateStatus(projectRoot, 'Failure');
+        updateStatusToStateLib(projectRoot, 'Failure', err.message, '', PROMOTE_ACTION);
         logger.error(err);
         payload = err;
     }

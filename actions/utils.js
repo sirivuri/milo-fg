@@ -21,6 +21,17 @@ const fetch = require('node-fetch');
 const crypto = require('crypto');
 const { fetchWithRetry } = require('./sharepoint');
 
+const statusFormat = {
+    action: {
+        type: '',
+        status: '',
+        message: '',
+        activationId: ''
+    }
+};
+const COPY_ACTION = 'copyAction';
+const PROMOTE_ACTION = 'promoteAction';
+
 const MAX_RETRIES = 5;
 
 function getAioLogger(loggerName = 'main', logLevel = 'info') {
@@ -124,20 +135,56 @@ function getDocPathFromUrl(url) {
     return `${path}.docx`;
 }
 
-async function updateStatus(storeKey, status) {
+async function updateStatusToStateLib(storeKey, status, statusMessage, activationId, action) {
     const logger = getAioLogger();
-    // md5 hash of the config file
     try {
-        const hash = crypto.createHash('md5').update(storeKey).digest('hex');
-        logger.info(`Adding status to aio state lib with hash -- ${hash} - ${status}`);
-        const state = await stateLib.init();
-        state.put(hash, status);
+        getStatusFromStateLib(storeKey).then((result) => {
+            if (result?.action) {
+                const storeValue = result;
+                if (status) {
+                    storeValue.action.status = status;
+                }
+                if (statusMessage) {
+                    storeValue.action.message = statusMessage;
+                }
+                if (activationId) {
+                    storeValue.action.activationId = activationId;
+                }
+                logger.info(`222 Updating status to state store  -- value :   ${JSON.stringify(storeValue)}`);
+                updateStateStatus(storeKey, storeValue);
+            } else {
+                const storeStatus = statusFormat;
+                logger.info(`333 Updating status to state store  -- value :   ${JSON.stringify(storeStatus)}`);
+                storeStatus.action.type = action;
+                storeStatus.action.status = status;
+                storeStatus.action.message = statusMessage;
+                storeStatus.action.activationId = activationId;
+                updateStateStatus(storeKey, storeStatus);
+            }
+        });
     } catch (err) {
         logger.error(`Error creating state store ${err}`);
     }
 }
 
-async function getStatusFromProjectFile(storeKey) {
+async function updateStateStatus(storeKey, storeValue) {
+    const logger = getAioLogger();
+    const hash = crypto.createHash('md5').update(storeKey).digest('hex');
+    logger.info(`Adding status to aio state lib with hash -- ${hash} - ${JSON.stringify(storeValue)}`);
+    // get the hash value if its available
+    try {
+        const state = await stateLib.init();
+        // save it
+        await state.put(hash, storeValue, {
+            // 30day expiration...
+            ttl: 2592000
+        });
+    } catch (err) {
+        logger.error(`Error creating state store ${err}`);
+    }
+}
+
+async function getStatusFromStateLib(storeKey) {
     const logger = getAioLogger();
     let status;
     try {
@@ -148,11 +195,12 @@ async function getStatusFromProjectFile(storeKey) {
         const state = await stateLib.init();
         // getting activation id data from io state
         const res = await state.get(hash); // res = { value, expiration }
-        status = res.value;
-        logger.info(`Status from the store ${status}`);
-        // getting status of the activation id.
+        if (res) {
+            status = res.value;
+            logger.info(`Status from the store ${JSON.stringify(status)}`);
+        }
     } catch (err) {
-        logger.error(`Error creating state store ${err}`);
+        logger.error(`Error getting data from state store ${err}`);
     }
     return status;
 }
@@ -165,6 +213,8 @@ module.exports = {
     handleExtension,
     getFile,
     getDocPathFromUrl,
-    updateStatus,
-    getStatusFromProjectFile
+    updateStatusToStateLib,
+    getStatusFromStateLib,
+    COPY_ACTION,
+    PROMOTE_ACTION
 };

@@ -17,7 +17,7 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 const openwhisk = require('openwhisk');
-const { getAioLogger, updateStatus } = require('../utils');
+const { getAioLogger, updateStatusToStateLib, PROMOTE_ACTION } = require('../utils');
 
 // This returns the activation ID of the action that it called
 function main(args) {
@@ -32,9 +32,10 @@ function main(args) {
             logger.error(payload);
         } else if (!spToken || !adminPageUri || !projectExcelPath) {
             payload = 'Required data is not available to proceed with FG Promote action.';
-            updateStatus(projectRoot, 'Failure');
+            updateStatusToStateLib(projectRoot, 'Failure', payload, '', PROMOTE_ACTION);
             logger.error(payload);
         } else {
+            updateStatusToStateLib(projectRoot, 'In-Progress', 'Triggering promote action', '', PROMOTE_ACTION);
             const ow = openwhisk();
             return ow.actions.invoke({
                 name: 'milo-fg/promote-worker',
@@ -44,13 +45,13 @@ function main(args) {
             }).then((result) => {
                 logger.info(result);
                 //  attaching activation id to the status
-                updateStatus(projectRoot, `Copy action triggered with activation id ${result.activationId}`);
+                updateStatusToStateLib(projectRoot, 'In-Progress', '', result.activationId, PROMOTE_ACTION);
                 return {
                     code: 200,
                     body: { Success: result },
                 };
             }).catch((err) => {
-                updateStatus(projectRoot, 'Failure');
+                updateStatusToStateLib(projectRoot, 'Failure', `Failed to invoke actions ${err.message}`, '', PROMOTE_ACTION);
                 logger.error('failed to invoke actions', err);
                 return {
                     code: 500,
@@ -60,7 +61,7 @@ function main(args) {
         }
     } catch (err) {
         logger.error(err);
-        updateStatus(projectRoot, 'Failure');
+        updateStatusToStateLib(projectRoot, 'Failure', `Failed to invoke actions ${err.message}`, '', PROMOTE_ACTION);
         payload = err;
     }
 

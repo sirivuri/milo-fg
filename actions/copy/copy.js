@@ -17,7 +17,9 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 const openwhisk = require('openwhisk');
-const { getAioLogger, updateStatus } = require('../utils');
+const {
+    getAioLogger, updateStatusToStateLib, COPY_ACTION
+} = require('../utils');
 
 // This returns the activation ID of the action that it called
 function main(args) {
@@ -33,10 +35,10 @@ function main(args) {
             logger.error(payload);
         } else if (!spToken || !adminPageUri) {
             payload = 'Required data is not available to proceed with FG Promote action.';
-            updateStatus(projectPath, 'Failure');
+            updateStatusToStateLib(projectPath, 'Failure', payload, '', COPY_ACTION);
             logger.error(payload);
         } else {
-            updateStatus(projectPath, 'In-Progress');
+            updateStatusToStateLib(projectPath, 'In-Progress', 'Triggering copy action', '', COPY_ACTION);
             const ow = openwhisk();
             return ow.actions.invoke({
                 name: 'milo-fg/copy-worker',
@@ -46,13 +48,13 @@ function main(args) {
             }).then((result) => {
                 logger.info(result);
                 //  attaching activation id to the status
-                updateStatus(projectPath, `Copy action triggered with activation id ${result.activationId}`);
+                updateStatusToStateLib(projectPath, 'In-Progress', '', result.activationId, COPY_ACTION);
                 return {
                     code: 200,
                     body: { Success: result },
                 };
             }).catch((err) => {
-                updateStatus(projectPath, 'Failure');
+                updateStatusToStateLib(projectPath, 'Failure', `Failed to invoke actions ${err.message}`, '', COPY_ACTION);
                 logger.error('Failed to invoke actions', err);
                 return {
                     code: 500,
@@ -61,7 +63,7 @@ function main(args) {
             });
         }
     } catch (err) {
-        updateStatus(projectPath, 'Failure');
+        updateStatusToStateLib(projectPath, 'Failure', `Failed to invoke actions ${err.message}`, '', COPY_ACTION);
         logger.error(err);
         payload = err;
     }

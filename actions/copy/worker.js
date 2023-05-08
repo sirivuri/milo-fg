@@ -20,7 +20,7 @@ const {
     updateExcelTable, getFile, saveFile, copyFile
 } = require('../sharepoint');
 const {
-    getAioLogger, simulatePreview, handleExtension, updateStatus
+    getAioLogger, simulatePreview, handleExtension, updateStatusToStateLib, COPY_ACTION
 } = require('../utils');
 
 const BATCH_REQUEST_COPY = 20;
@@ -39,23 +39,30 @@ async function main(params) {
             logger.error(payload);
         } else if (!spToken || !adminPageUri) {
             payload = 'Required data is not available to proceed with FG Copy action.';
-            updateStatus(projectPath, 'Failure');
+            updateStatusToStateLib(projectPath, 'Failure', payload, '', COPY_ACTION);
             logger.error(payload);
         } else {
             projectPath = `${projectRoot}${projectExcelPath}`;
-            updateStatus(projectPath, 'In-Progress');
-            logger.info('Getting all files to be floodgated from the project excel file');
+            payload = 'Getting all files to be floodgated from the project excel file';
+            logger.info(payload);
+            updateStatusToStateLib(projectPath, 'In-Progress', payload, '', COPY_ACTION);
+
             const projectDetail = await getProjectDetails(adminPageUri, projectExcelPath);
 
+            payload = 'Injecting sharepoint data';
             logger.info('Injecting sharepoint data');
+            updateStatusToStateLib(projectPath, 'In-Progress', payload, '', COPY_ACTION);
             await updateProjectWithDocs(spToken, adminPageUri, projectDetail);
 
+            payload = 'Start floodgating content';
             logger.info('Start floodgating content');
+            updateStatusToStateLib(projectPath, 'In-Progress', payload, '', COPY_ACTION);
             payload = await floodgateContent(spToken, adminPageUri, projectExcelPath, projectDetail);
-            updateStatus(projectPath, 'Success');
+
+            updateStatusToStateLib(projectPath, 'Success', '', '', COPY_ACTION);
         }
     } catch (err) {
-        updateStatus(projectPath, 'Failure');
+        updateStatusToStateLib(projectPath, 'Failure', err.message, '', COPY_ACTION);
         logger.error(err);
         payload = err;
     }
