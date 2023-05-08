@@ -19,7 +19,9 @@ const { getProjectDetails, updateProjectWithDocs } = require('../project');
 const {
     updateExcelTable, getFile, saveFile, copyFile
 } = require('../sharepoint');
-const { getAioLogger, simulatePreview, handleExtension } = require('../utils');
+const {
+    getAioLogger, simulatePreview, handleExtension, updateStatus
+} = require('../utils');
 
 const BATCH_REQUEST_COPY = 20;
 const DELAY_TIME_COPY = 3000;
@@ -27,12 +29,21 @@ const DELAY_TIME_COPY = 3000;
 async function main(params) {
     const logger = getAioLogger();
     let payload;
+    const {
+        spToken, adminPageUri, projectExcelPath, projectRoot
+    } = params;
+    let projectPath = `${projectRoot}${projectExcelPath}`;
     try {
-        const { spToken, adminPageUri, projectExcelPath } = params;
-        if (!spToken || !adminPageUri || !projectExcelPath) {
+        if (!projectRoot || !projectExcelPath) {
+            payload = 'Could not determine the project path. Try reloading the page and trigger the action again.';
+            logger.error(payload);
+        } else if (!spToken || !adminPageUri) {
             payload = 'Required data is not available to proceed with FG Copy action.';
+            updateStatus(projectPath, 'Failure');
             logger.error(payload);
         } else {
+            projectPath = `${projectRoot}${projectExcelPath}`;
+            updateStatus(projectPath, 'In-Progress');
             logger.info('Getting all files to be floodgated from the project excel file');
             const projectDetail = await getProjectDetails(adminPageUri, projectExcelPath);
 
@@ -41,8 +52,10 @@ async function main(params) {
 
             logger.info('Start floodgating content');
             payload = await floodgateContent(spToken, adminPageUri, projectExcelPath, projectDetail);
+            updateStatus(projectPath, 'Success');
         }
     } catch (err) {
+        updateStatus(projectPath, 'Failure');
         logger.error(err);
         payload = err;
     }
@@ -130,7 +143,9 @@ async function floodgateContent(spToken, adminPageUri, projectExcelPath, project
     logger.info('Project excel file updated with copy status.');
 
     if (failedCopies.length > 0 || failedPreviews.length > 0) {
-        logger.info('Error occurred when floodgating content. Check project excel sheet for additional information.');
+        const errorMessage = 'Error occurred when floodgating content. Check project excel sheet for additional information.';
+        logger.info(errorMessage);
+        throw new Error(errorMessage);
     } else {
         logger.info('Copied content to floodgate tree successfully.');
     }

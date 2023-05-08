@@ -21,7 +21,7 @@ const {
     getAuthorizedRequestOption, createFolder, saveFile, updateExcelTable
 } = require('../sharepoint');
 const {
-    getAioLogger, simulatePreview, handleExtension, getFile
+    getAioLogger, simulatePreview, handleExtension, getFile, updateStatus
 } = require('../utils');
 
 const BATCH_REQUEST_PROMOTE = 20;
@@ -31,16 +31,25 @@ const MAX_CHILDREN = 1000;
 async function main(params) {
     const logger = getAioLogger();
     let payload;
+    const {
+        spToken, adminPageUri, projectExcelPath, projectRoot
+    } = params;
     try {
-        const { spToken, adminPageUri, projectExcelPath } = params;
-        if (!spToken || !adminPageUri || !projectExcelPath) {
+        if (!projectRoot) {
             payload = 'Required data is not available to proceed with FG Promote action.';
             logger.error(payload);
+        } else if (!spToken || !adminPageUri || !projectExcelPath) {
+            payload = 'Required data is not available to proceed with FG Promote action.';
+            updateStatus(projectRoot, payload);
+            logger.error(payload);
         } else {
+            updateStatus(projectRoot, 'In-Progress');
             logger.info('Getting all files to be promoted');
             payload = await promoteFloodgatedFiles(spToken, adminPageUri, projectExcelPath);
+            updateStatus(projectRoot, 'Success');
         }
     } catch (err) {
+        updateStatus(projectRoot, 'Failure');
         logger.error(err);
         payload = err;
     }
@@ -153,7 +162,9 @@ async function promoteFloodgatedFiles(spToken, adminPageUri, projectExcelPath) {
             status.success = promoteSuccess;
             status.srcPath = filePath;
         } catch (error) {
-            logger.error(`Error occurred when trying to promote files to main content tree ${error.message}`);
+            const errorMessage = `Error occurred when trying to promote files to main content tree ${error.message}`;
+            logger.error(errorMessage);
+            throw new Error(errorMessage, error);
         }
         return status;
     }

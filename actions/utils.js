@@ -16,7 +16,9 @@
 ************************************************************************* */
 
 const AioLogger = require('@adobe/aio-lib-core-logging');
+const stateLib = require('@adobe/aio-lib-state');
 const fetch = require('node-fetch');
+const crypto = require('crypto');
 const { fetchWithRetry } = require('./sharepoint');
 
 const MAX_RETRIES = 5;
@@ -122,6 +124,39 @@ function getDocPathFromUrl(url) {
     return `${path}.docx`;
 }
 
+async function updateStatus(storeKey, status) {
+    const logger = getAioLogger();
+    // md5 hash of the config file
+    try {
+        const hash = crypto.createHash('md5').update(storeKey).digest('hex');
+        logger.info(`Adding status to aio state lib with hash -- ${hash} - ${status}`);
+        const state = await stateLib.init();
+        state.put(hash, status);
+    } catch (err) {
+        logger.error(`Error creating state store ${err}`);
+    }
+}
+
+async function getStatusFromProjectFile(storeKey) {
+    const logger = getAioLogger();
+    let status;
+    try {
+        // md5 hash of the config file
+        const hash = crypto.createHash('md5').update(storeKey).digest('hex');
+        logger.info(`Project excel path and hash value -- ${storeKey} and ${hash}`);
+        // init when running in an Adobe I/O Runtime action (OpenWhisk) (uses env vars __OW_API_KEY and __OW_NAMESPACE automatically)
+        const state = await stateLib.init();
+        // getting activation id data from io state
+        const res = await state.get(hash); // res = { value, expiration }
+        status = res.value;
+        logger.info(`Status from the store ${status}`);
+        // getting status of the activation id.
+    } catch (err) {
+        logger.error(`Error creating state store ${err}`);
+    }
+    return status;
+}
+
 module.exports = {
     getAioLogger,
     getUrlInfo,
@@ -129,5 +164,7 @@ module.exports = {
     simulatePreview,
     handleExtension,
     getFile,
-    getDocPathFromUrl
+    getDocPathFromUrl,
+    updateStatus,
+    getStatusFromProjectFile
 };

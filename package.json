@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@adobe/aio-lib-core-logging": "^2.0.0",
+    "@adobe/aio-lib-state": "^2.1.2",
     "@adobe/aio-sdk": "^3.0.0",
     "@adobe/exc-app": "^0.2.17",
     "cloudevents": "^4.0.2",

@@ -38,3 +38,9 @@ application:
               LOG_LEVEL: debug
             limits:
               timeout: 3600000
+          status:
+            function: actions/status/status.js
+            web: 'yes'
+            runtime: nodejs:16
+            inputs:
+              LOG_LEVEL: debug
