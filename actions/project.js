@@ -21,6 +21,13 @@ const {
     getAioLogger, getUrlInfo, handleExtension, getFloodgateUrl, getDocPathFromUrl
 } = require('./utils');
 
+const PROJECT_STATUS = {
+    NOT_STARTED: 'NOT STARTED',
+    COMPLETED: 'COMPLETED',
+    COMPLETED_WITH_ERROR: 'COMPLETED WITH ERROR',
+    IN_PROGRESS: 'IN PROGRESS'
+};
+
 async function getProjectDetails(adminPageUri, projectExcelPath) {
     const logger = getAioLogger();
     logger.info('Getting paths from project excel worksheet');
@@ -107,4 +114,5 @@ async function updateProjectWithDocs(spToken, adminPageUri, projectDetail) {
 module.exports = {
     getProjectDetails,
     updateProjectWithDocs,
+    PROJECT_STATUS
 };

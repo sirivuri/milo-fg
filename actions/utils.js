@@ -150,11 +150,11 @@ async function updateStatusToStateLib(storeKey, status, statusMessage, activatio
                 if (activationId) {
                     storeValue.action.activationId = activationId;
                 }
-                logger.info(`222 Updating status to state store  -- value :   ${JSON.stringify(storeValue)}`);
+                logger.info(`Updating status to state store  -- value :   ${JSON.stringify(storeValue)}`);
                 updateStateStatus(storeKey, storeValue);
             } else {
                 const storeStatus = statusFormat;
-                logger.info(`333 Updating status to state store  -- value :   ${JSON.stringify(storeStatus)}`);
+                logger.info(`Updating status to state store  -- value :   ${JSON.stringify(storeStatus)}`);
                 storeStatus.action.type = action;
                 storeStatus.action.status = status;
                 storeStatus.action.message = statusMessage;

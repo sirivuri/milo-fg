@@ -17,6 +17,7 @@
 
 const fetch = require('node-fetch');
 const { getConfig } = require('../config');
+const { PROJECT_STATUS } = require('../project');
 const {
     getAuthorizedRequestOption, createFolder, saveFile, updateExcelTable
 } = require('../sharepoint');
@@ -40,17 +41,17 @@ async function main(params) {
             logger.error(payload);
         } else if (!spToken || !adminPageUri || !projectExcelPath) {
             payload = 'Required data is not available to proceed with FG Promote action.';
-            updateStatusToStateLib(projectRoot, 'Failure', payload, '', PROMOTE_ACTION);
+            updateStatusToStateLib(projectRoot, PROJECT_STATUS.COMPLETED_WITH_ERROR, payload, undefined, PROMOTE_ACTION);
             logger.error(payload);
         } else {
             payload = 'Getting all files to be promoted';
-            updateStatusToStateLib(projectRoot, 'In-Progress', payload, '', PROMOTE_ACTION);
+            updateStatusToStateLib(projectRoot, PROJECT_STATUS.IN_PROGRESS, payload, undefined, PROMOTE_ACTION);
             logger.info(payload);
             payload = await promoteFloodgatedFiles(spToken, adminPageUri, projectExcelPath);
-            updateStatusToStateLib(projectRoot, 'Success', '', '', PROMOTE_ACTION);
+            updateStatusToStateLib(projectRoot, PROJECT_STATUS.COMPLETED, '', undefined, PROMOTE_ACTION);
         }
     } catch (err) {
-        updateStatusToStateLib(projectRoot, 'Failure', err.message, '', PROMOTE_ACTION);
+        updateStatusToStateLib(projectRoot, PROJECT_STATUS.COMPLETED_WITH_ERROR, err.message, undefined, PROMOTE_ACTION);
         logger.error(err);
         payload = err;
     }

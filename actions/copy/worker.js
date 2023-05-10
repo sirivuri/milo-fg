@@ -15,7 +15,7 @@
 * from Adobe.
 ************************************************************************* */
 
-const { getProjectDetails, updateProjectWithDocs } = require('../project');
+const { getProjectDetails, updateProjectWithDocs, PROJECT_STATUS } = require('../project');
 const {
     updateExcelTable, getFile, saveFile, copyFile
 } = require('../sharepoint');
@@ -39,30 +39,30 @@ async function main(params) {
             logger.error(payload);
         } else if (!spToken || !adminPageUri) {
             payload = 'Required data is not available to proceed with FG Copy action.';
-            updateStatusToStateLib(projectPath, 'Failure', payload, '', COPY_ACTION);
+            updateStatusToStateLib(projectPath, PROJECT_STATUS.COMPLETED_WITH_ERROR, payload, undefined, COPY_ACTION);
             logger.error(payload);
         } else {
             projectPath = `${projectRoot}${projectExcelPath}`;
             payload = 'Getting all files to be floodgated from the project excel file';
             logger.info(payload);
-            updateStatusToStateLib(projectPath, 'In-Progress', payload, '', COPY_ACTION);
+            updateStatusToStateLib(projectPath, PROJECT_STATUS.IN_PROGRESS, payload, undefined, COPY_ACTION);
 
             const projectDetail = await getProjectDetails(adminPageUri, projectExcelPath);
 
             payload = 'Injecting sharepoint data';
             logger.info('Injecting sharepoint data');
-            updateStatusToStateLib(projectPath, 'In-Progress', payload, '', COPY_ACTION);
+            updateStatusToStateLib(projectPath, PROJECT_STATUS.IN_PROGRESS, payload, undefined, COPY_ACTION);
             await updateProjectWithDocs(spToken, adminPageUri, projectDetail);
 
             payload = 'Start floodgating content';
             logger.info('Start floodgating content');
-            updateStatusToStateLib(projectPath, 'In-Progress', payload, '', COPY_ACTION);
+            updateStatusToStateLib(projectPath, PROJECT_STATUS.IN_PROGRESS, payload, undefined, COPY_ACTION);
             payload = await floodgateContent(spToken, adminPageUri, projectExcelPath, projectDetail);
 
-            updateStatusToStateLib(projectPath, 'Success', '', '', COPY_ACTION);
+            updateStatusToStateLib(projectPath, PROJECT_STATUS.COMPLETED, undefined, undefined, COPY_ACTION);
         }
     } catch (err) {
-        updateStatusToStateLib(projectPath, 'Failure', err.message, '', COPY_ACTION);
+        updateStatusToStateLib(projectPath, PROJECT_STATUS.COMPLETED_WITH_ERROR, err.message, undefined, COPY_ACTION);
         logger.error(err);
         payload = err;
     }

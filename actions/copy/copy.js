@@ -17,12 +17,13 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 const openwhisk = require('openwhisk');
+const { PROJECT_STATUS } = require('../project');
 const {
-    getAioLogger, updateStatusToStateLib, COPY_ACTION
+    getAioLogger, updateStatusToStateLib, COPY_ACTION, getStatusFromStateLib
 } = require('../utils');
 
 // This returns the activation ID of the action that it called
-function main(args) {
+async function main(args) {
     const logger = getAioLogger();
     let payload;
     const {
@@ -35,35 +36,45 @@ function main(args) {
             logger.error(payload);
         } else if (!spToken || !adminPageUri) {
             payload = 'Required data is not available to proceed with FG Promote action.';
-            updateStatusToStateLib(projectPath, 'Failure', payload, '', COPY_ACTION);
+            updateStatusToStateLib(projectPath, PROJECT_STATUS.COMPLETED_WITH_ERROR, payload, '', COPY_ACTION);
             logger.error(payload);
         } else {
-            updateStatusToStateLib(projectPath, 'In-Progress', 'Triggering copy action', '', COPY_ACTION);
-            const ow = openwhisk();
-            return ow.actions.invoke({
-                name: 'milo-fg/copy-worker',
-                blocking: false, // this is the flag that instructs to execute the worker asynchronous
-                result: false,
-                params: args
-            }).then((result) => {
-                logger.info(result);
-                //  attaching activation id to the status
-                updateStatusToStateLib(projectPath, 'In-Progress', '', result.activationId, COPY_ACTION);
-                return {
-                    code: 200,
-                    body: { Success: result },
-                };
-            }).catch((err) => {
-                updateStatusToStateLib(projectPath, 'Failure', `Failed to invoke actions ${err.message}`, '', COPY_ACTION);
-                logger.error('Failed to invoke actions', err);
-                return {
-                    code: 500,
-                    body: { Error: err }
-                };
-            });
+            const storeValue = await getStatusFromStateLib(projectPath);
+            if (storeValue?.action?.status === PROJECT_STATUS.IN_PROGRESS) {
+                payload = 'A copy action project is already in progress.';
+                logger.error(payload);
+            } else {
+                await updateStatusToStateLib(projectPath, PROJECT_STATUS.IN_PROGRESS, 'Triggering copy action', '', COPY_ACTION);
+                const ow = openwhisk();
+                return ow.actions.invoke({
+                    name: 'milo-fg/copy-worker',
+                    blocking: false, // this is the flag that instructs to execute the worker asynchronous
+                    result: false,
+                    params: args
+                }).then((result) => {
+                    logger.info(result);
+                    //  attaching activation id to the status
+                    updateStatusToStateLib(projectPath, PROJECT_STATUS.IN_PROGRESS, undefined, result.activationId, COPY_ACTION);
+                    return {
+                        code: 200,
+                        body: { Success: result },
+                    };
+                }).catch((err) => {
+                    updateStatusToStateLib(projectPath, PROJECT_STATUS.COMPLETED_WITH_ERROR, `Failed to invoke actions ${err.message}`, undefined, COPY_ACTION);
+                    logger.error('Failed to invoke actions', err);
+                    return {
+                        code: 500,
+                        body: { Error: err }
+                    };
+                });
+            }
+            return {
+                code: 500,
+                body: { Error: payload },
+            };
         }
     } catch (err) {
-        updateStatusToStateLib(projectPath, 'Failure', `Failed to invoke actions ${err.message}`, '', COPY_ACTION);
+        updateStatusToStateLib(projectPath, PROJECT_STATUS.COMPLETED_WITH_ERROR, `Failed to invoke actions ${err.message}`, undefined, COPY_ACTION);
         logger.error(err);
         payload = err;
     }
