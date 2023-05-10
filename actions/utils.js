@@ -21,7 +21,7 @@ const fetch = require('node-fetch');
 const crypto = require('crypto');
 const { fetchWithRetry } = require('./sharepoint');
 
-const statusFormat = {
+const STATUS_FORMAT = {
     action: {
         type: '',
         status: '',
@@ -153,7 +153,7 @@ async function updateStatusToStateLib(storeKey, status, statusMessage, activatio
                 logger.info(`Updating status to state store  -- value :   ${JSON.stringify(storeValue)}`);
                 updateStateStatus(storeKey, storeValue);
             } else {
-                const storeStatus = statusFormat;
+                const storeStatus = STATUS_FORMAT;
                 logger.info(`Updating status to state store  -- value :   ${JSON.stringify(storeStatus)}`);
                 storeStatus.action.type = action;
                 storeStatus.action.status = status;
