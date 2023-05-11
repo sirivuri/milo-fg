@@ -19,10 +19,10 @@ const fetch = require('node-fetch');
 const { getConfig } = require('../config');
 const { PROJECT_STATUS } = require('../project');
 const {
-    getAuthorizedRequestOption, createFolder, saveFile, updateExcelTable
+    getAuthorizedRequestOption, createFolder, saveFile, updateExcelTable, getFileUsingDownloadUrl
 } = require('../sharepoint');
 const {
-    getAioLogger, simulatePreview, handleExtension, getFile, updateStatusToStateLib, PROMOTE_ACTION
+    getAioLogger, simulatePreview, handleExtension, , updateStatusToStateLib, PROMOTE_ACTION
 } = require('../utils');
 
 const BATCH_REQUEST_PROMOTE = 20;
@@ -147,7 +147,7 @@ async function promoteFloodgatedFiles(spToken, adminPageUri, projectExcelPath) {
             if (res.ok) {
                 // File exists at the destination (main content tree)
                 // Get the file in the pink directory using downloadUrl
-                const file = await getFile(downloadUrl);
+                const file = await getFileUsingDownloadUrl(downloadUrl);
                 if (file) {
                     // Save the file in the main content tree
                     const saveStatus = await saveFile(spToken, adminPageUri, file, filePath);

@@ -19,7 +19,6 @@ const AioLogger = require('@adobe/aio-lib-core-logging');
 const stateLib = require('@adobe/aio-lib-state');
 const fetch = require('node-fetch');
 const crypto = require('crypto');
-const { fetchWithRetry } = require('./sharepoint');
 
 const STATUS_FORMAT = {
     action: {
@@ -102,14 +101,6 @@ function handleExtension(path) {
         return path.replace('.xlsx', '.json');
     }
     return path.substring(0, path.lastIndexOf('.'));
-}
-
-async function getFile(downloadUrl) {
-    const response = await fetchWithRetry(downloadUrl);
-    if (response) {
-        return response.blob();
-    }
-    return undefined;
 }
 
 function getPathFromUrl(url) {
@@ -211,7 +202,6 @@ module.exports = {
     getFloodgateUrl,
     simulatePreview,
     handleExtension,
-    getFile,
     getDocPathFromUrl,
     updateStatusToStateLib,
     getStatusFromStateLib,
