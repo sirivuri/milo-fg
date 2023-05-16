@@ -41,7 +41,7 @@ async function main(params) {
             logger.error(payload);
         } else if (!spToken || !adminPageUri) {
             payload = 'Required data is not available to proceed with FG Copy action.';
-            updateStatusToStateLib(projectPath, PROJECT_STATUS.COMPLETED_WITH_ERROR, payload, undefined, COPY_ACTION);
+            updateStatusToStateLib(projectPath, PROJECT_STATUS.FAILED, payload, undefined, COPY_ACTION);
             logger.error(payload);
         } else {
             projectPath = `${projectRoot}${projectExcelPath}`;
