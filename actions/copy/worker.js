@@ -52,12 +52,12 @@ async function main(params) {
             const projectDetail = await getProjectDetails(adminPageUri, projectExcelPath);
 
             payload = 'Injecting sharepoint data';
-            logger.info('Injecting sharepoint data');
+            logger.info(payload);
             updateStatusToStateLib(projectPath, PROJECT_STATUS.IN_PROGRESS, payload, undefined, COPY_ACTION);
             await updateProjectWithDocs(spToken, adminPageUri, projectDetail);
 
             payload = 'Start floodgating content';
-            logger.info('Start floodgating content');
+            logger.info(payload);
             updateStatusToStateLib(projectPath, PROJECT_STATUS.IN_PROGRESS, payload, undefined, COPY_ACTION);
             payload = await floodgateContent(spToken, adminPageUri, projectExcelPath, projectDetail);
 
