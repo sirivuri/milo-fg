@@ -49,7 +49,7 @@ async function main(params) {
             updateStatusToStateLib(projectRoot, PROJECT_STATUS.IN_PROGRESS, payload, undefined, PROMOTE_ACTION);
             logger.info(payload);
             payload = await promoteFloodgatedFiles(spToken, adminPageUri, projectExcelPath);
-            updateStatusToStateLib(projectRoot, PROJECT_STATUS.COMPLETED, '', undefined, PROMOTE_ACTION);
+            updateStatusToStateLib(projectRoot, PROJECT_STATUS.COMPLETED, payload, undefined, PROMOTE_ACTION);
         }
     } catch (err) {
         updateStatusToStateLib(projectRoot, PROJECT_STATUS.COMPLETED_WITH_ERROR, err.message, undefined, PROMOTE_ACTION);
@@ -173,6 +173,7 @@ async function promoteFloodgatedFiles(spToken, adminPageUri, projectExcelPath) {
     }
 
     const startPromote = new Date();
+    let payload = 'Getting all floodgated files to promote';
     // Iterate the floodgate tree and get all files to promote
     const allFloodgatedFiles = await findAllFiles(spToken, adminPageUri);
     // create batches to process the data
@@ -193,7 +194,8 @@ async function promoteFloodgatedFiles(spToken, adminPageUri, projectExcelPath) {
         await new Promise((resolve) => setTimeout(resolve, DELAY_TIME_PROMOTE));
     }
     const endPromote = new Date();
-    logger.info('Completed promoting all documents in the pink folder');
+    payload = 'Completed promoting all documents in the pink folder';
+    logger.info(payload);
 
     logger.info('Previewing promoted files.');
     const previewStatuses = await Promise.all(
@@ -201,7 +203,8 @@ async function promoteFloodgatedFiles(spToken, adminPageUri, projectExcelPath) {
             .filter((status) => status.success)
             .map((status) => simulatePreview(handleExtension(status.srcPath), 1, false, adminPageUri)),
     );
-    logger.info('Completed generating Preview for promoted files.');
+    payload = 'Completed generating Preview for promoted files.';
+    logger.info(payload);
 
     const failedPromotes = promoteStatuses.filter((status) => !status.success)
         .map((status) => status.srcPath || 'Path Info Not available');
@@ -210,15 +213,20 @@ async function promoteFloodgatedFiles(spToken, adminPageUri, projectExcelPath) {
 
     const excelValues = [['PROMOTE', startPromote, endPromote, failedPromotes.join('\n'), failedPreviews.join('\n')]];
     await updateExcelTable(spToken, adminPageUri, projectExcelPath, 'PROMOTE_STATUS', excelValues);
-    logger.info('Project excel file updated with promote status.');
+    payload = 'Project excel file updated with promote status.';
+    logger.info(payload);
 
     if (failedPromotes.length > 0 || failedPreviews.length > 0) {
-        logger.info('Error occurred when promoting floodgated content. Check project excel sheet for additional information.');
+        payload = 'Error occurred when promoting floodgated content. Check project excel sheet for additional information.';
+        logger.info(payload);
+        throw new Error(payload);
     } else {
+        payload = 'Promoted floodgate tree successfully.';
         logger.info('Promoted floodgate tree successfully.');
     }
 
-    return 'All tasks for Floodgate Promote completed';
+    payload = 'All tasks for Floodgate Promote completed';
+    return payload;
 }
 
 exports.main = main;
