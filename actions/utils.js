@@ -213,6 +213,5 @@ module.exports = {
     getStatusFromStateLib,
     delay,
     COPY_ACTION,
-    PROMOTE_ACTION,
-    STATUS_FORMAT
+    PROMOTE_ACTION
 };
