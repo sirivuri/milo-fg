@@ -38,7 +38,7 @@ async function main(args) {
             payload = 'Could not determine the project path. Try reloading the page and trigger the action again.';
             logger.error(payload);
         } else if (!adminPageUri) {
-            payload = 'Required data is not available to proceed with FG Promote action.';
+            payload = 'Required data is not available to proceed with FG Copy action.';
             logger.error(payload);
             payload = await updateStatusToStateLib(projectPath, PROJECT_STATUS.FAILED, payload, undefined, COPY_ACTION);
         } else {
