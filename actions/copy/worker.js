@@ -31,12 +31,12 @@ async function main(params) {
     const logger = getAioLogger();
     let payload;
     const {
-        adminPageUri, projectExcelPath, projectRoot
+        adminPageUri, projectExcelPath, rootFolder
     } = params;
     appConfig.setAppConfig(params);
-    let projectPath = `${projectRoot}${projectExcelPath}`;
+    const projectPath = `${rootFolder}${projectExcelPath}`;
     try {
-        if (!projectRoot || !projectExcelPath) {
+        if (!rootFolder || !projectExcelPath) {
             payload = 'Could not determine the project path. Try reloading the page and trigger the action again.';
             logger.error(payload);
         } else if (!adminPageUri) {
@@ -44,7 +44,6 @@ async function main(params) {
             updateStatusToStateLib(projectPath, PROJECT_STATUS.FAILED, payload, undefined, COPY_ACTION);
             logger.error(payload);
         } else {
-            projectPath = `${projectRoot}${projectExcelPath}`;
             payload = 'Getting all files to be floodgated from the project excel file';
             logger.info(payload);
             updateStatusToStateLib(projectPath, PROJECT_STATUS.IN_PROGRESS, payload, undefined, COPY_ACTION);

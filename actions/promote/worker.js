@@ -33,12 +33,12 @@ async function main(params) {
     const logger = getAioLogger();
     let payload;
     const {
-        adminPageUri, projectExcelPath, projectRoot
+        adminPageUri, projectExcelPath, fgRootFolder
     } = params;
     appConfig.setAppConfig(params);
 
     try {
-        if (!projectRoot) {
+        if (!fgRootFolder) {
             payload = 'Required data is not available to proceed with FG Promote action.';
             logger.error(payload);
         } else if (!adminPageUri || !projectExcelPath) {
