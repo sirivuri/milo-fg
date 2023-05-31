@@ -43,30 +43,30 @@ async function main(params) {
             logger.error(payload);
         } else if (!adminPageUri) {
             payload = 'Required data is not available to proceed with FG Copy action.';
-            updateStatusToStateLib(projectPath, PROJECT_STATUS.FAILED, payload, undefined, COPY_ACTION);
+            updateStatusToStateLib(projectPath, PROJECT_STATUS.FAILED, payload, undefined, undefined, new Date(), COPY_ACTION);
             logger.error(payload);
         } else {
             urlInfo.setUrlInfo(adminPageUri);
             payload = 'Getting all files to be floodgated from the project excel file';
             logger.info(payload);
-            updateStatusToStateLib(projectPath, PROJECT_STATUS.IN_PROGRESS, payload, undefined, COPY_ACTION);
+            updateStatusToStateLib(projectPath, PROJECT_STATUS.IN_PROGRESS, payload, undefined, undefined, undefined, COPY_ACTION);
 
             const projectDetail = await getProjectDetails(projectExcelPath);
 
             payload = 'Injecting sharepoint data';
             logger.info(payload);
-            updateStatusToStateLib(projectPath, PROJECT_STATUS.IN_PROGRESS, payload, undefined, COPY_ACTION);
+            updateStatusToStateLib(projectPath, PROJECT_STATUS.IN_PROGRESS, payload, undefined, undefined, undefined, COPY_ACTION);
             await updateProjectWithDocs(projectDetail);
 
             payload = 'Start floodgating content';
             logger.info(payload);
-            updateStatusToStateLib(projectPath, PROJECT_STATUS.IN_PROGRESS, payload, undefined, COPY_ACTION);
+            updateStatusToStateLib(projectPath, PROJECT_STATUS.IN_PROGRESS, payload, undefined, undefined, undefined, COPY_ACTION);
             payload = await floodgateContent(projectExcelPath, projectDetail);
 
-            updateStatusToStateLib(projectPath, PROJECT_STATUS.COMPLETED, payload, undefined, COPY_ACTION);
+            updateStatusToStateLib(projectPath, PROJECT_STATUS.COMPLETED, payload, undefined, undefined, new Date(), COPY_ACTION);
         }
     } catch (err) {
-        updateStatusToStateLib(projectPath, PROJECT_STATUS.COMPLETED_WITH_ERROR, err.message, undefined, COPY_ACTION);
+        updateStatusToStateLib(projectPath, PROJECT_STATUS.COMPLETED_WITH_ERROR, err.message, undefined, undefined, new Date(), COPY_ACTION);
         logger.error(err);
         payload = err;
     }

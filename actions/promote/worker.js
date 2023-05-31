@@ -45,18 +45,18 @@ async function main(params) {
             logger.error(payload);
         } else if (!adminPageUri || !projectExcelPath) {
             payload = 'Required data is not available to proceed with FG Promote action.';
-            updateStatusToStateLib(fgRootFolder, PROJECT_STATUS.FAILED, payload, undefined, PROMOTE_ACTION);
+            updateStatusToStateLib(fgRootFolder, PROJECT_STATUS.FAILED, payload, undefined, undefined, new Date(), PROMOTE_ACTION);
             logger.error(payload);
         } else {
             urlInfo.setUrlInfo(adminPageUri);
             payload = 'Getting all files to be promoted.';
-            updateStatusToStateLib(fgRootFolder, PROJECT_STATUS.IN_PROGRESS, payload, undefined, PROMOTE_ACTION);
+            updateStatusToStateLib(fgRootFolder, PROJECT_STATUS.IN_PROGRESS, payload, undefined, undefined, undefined, PROMOTE_ACTION);
             logger.info(payload);
             payload = await promoteFloodgatedFiles(projectExcelPath, doPublish);
-            updateStatusToStateLib(fgRootFolder, PROJECT_STATUS.COMPLETED, payload, undefined, PROMOTE_ACTION);
+            updateStatusToStateLib(fgRootFolder, PROJECT_STATUS.COMPLETED, payload, undefined, undefined, new Date(), PROMOTE_ACTION);
         }
     } catch (err) {
-        updateStatusToStateLib(fgRootFolder, PROJECT_STATUS.COMPLETED_WITH_ERROR, err.message, undefined, PROMOTE_ACTION);
+        updateStatusToStateLib(fgRootFolder, PROJECT_STATUS.COMPLETED_WITH_ERROR, err.message, undefined, undefined, new Date(), PROMOTE_ACTION);
         logger.error(err);
         payload = err;
     }

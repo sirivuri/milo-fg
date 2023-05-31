@@ -27,7 +27,9 @@ const STATUS_FORMAT = {
         type: '',
         status: '',
         message: '',
-        activationId: ''
+        activationId: '',
+        startTime: '',
+        endTime: ''
     }
 };
 const COPY_ACTION = 'copyAction';
@@ -92,7 +94,7 @@ function getDocPathFromUrl(url) {
     return `${path}.docx`;
 }
 
-async function updateStatusToStateLib(storeKey, status, statusMessage, activationId, action) {
+async function updateStatusToStateLib(storeKey, status, statusMessage, activationId, startTime, endTime, action) {
     const logger = getAioLogger();
     let storeStatus = STATUS_FORMAT;
     try {
@@ -108,6 +110,12 @@ async function updateStatusToStateLib(storeKey, status, statusMessage, activatio
                 if (activationId) {
                     storeStatus.action.activationId = activationId;
                 }
+                if (startTime) {
+                    storeStatus.action.startTime = startTime;
+                }
+                if (endTime) {
+                    storeStatus.action.endTime = endTime;
+                }
                 logger.info(`Updating status to state store  -- value :   ${JSON.stringify(storeStatus)}`);
                 updateStateStatus(storeKey, storeStatus);
             } else {
@@ -116,6 +124,8 @@ async function updateStatusToStateLib(storeKey, status, statusMessage, activatio
                 storeStatus.action.status = status;
                 storeStatus.action.message = statusMessage;
                 storeStatus.action.activationId = activationId;
+                storeStatus.action.startTime = startTime;
+                storeStatus.action.endTime = endTime;
                 updateStateStatus(storeKey, storeStatus);
             }
         });
